@@ -13,3 +13,4 @@
 - Checked live site: /wp-json/wp/v2/posts is public. Multi-author, IDs out of date order, featured media is a link only (needs embed or a second request).
 - Wrote notifier, workflow. Syntax ok. Next: tests.
 - Tests 37/37 pass. Live site unreachable from sandbox shell (allowlist) -> verified structure via WebFetch, mock mirrors it. Wrapped main in friendly error handler; retested. README written.
+- Repo set up: flattened layout, workflow moved to .github/workflows/. Tests re-run from repo root.

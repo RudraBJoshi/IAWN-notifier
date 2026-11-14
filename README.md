@@ -12,13 +12,15 @@ inside-a-wandering-mind.com. No bot token, no server: it uses a channel webhook 
 3. Channel settings -> Integrations -> Webhooks -> New Webhook -> choose the channel -> **Copy Webhook URL**.
    Treat that URL like a password: anyone who has it can post to your channel.
 
-### 2. GitHub: a repo for the notifier
-1. Create a **private** repo (e.g. `iawm-discord-notifier`) and add these files at the same paths:
-   `iawm_discord_notifier.py`, `.github/workflows/notify.yml`
-2. Settings -> Secrets and variables -> Actions:
+### 2. GitHub (this repo)
+Files are already in place: `iawm_discord_notifier.py` at the top level and `.github/workflows/notify.yml`.
+1. Settings -> Secrets and variables -> Actions:
    - **Secrets** tab -> New repository secret: `DISCORD_WEBHOOK_URL` = the webhook URL
    - **Variables** tab -> New repository variable: `DISCORD_ROLE_ID` = the role ID
-3. Settings -> Actions -> General -> Workflow permissions -> **Read and write permissions** (lets it save `state.json`).
+2. Settings -> Actions -> General -> Workflow permissions -> **Read and write permissions** (lets it save `state.json`).
+3. Keep the repo **public** to stay free (nothing secret is in it: the webhook lives in an encrypted secret and `state.json`
+   is just post IDs). A private repo on the free plan may run out of included minutes at a 15-minute schedule; if you go
+   private, change `*/15` to `*/30` in `notify.yml`.
 4. Actions tab -> "Notify Discord of new articles" -> **Run workflow**. The first run only memorises existing posts (no pings).
    After that, each new article gets announced within about 15 minutes of publishing.
 
