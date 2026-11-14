@@ -1,0 +1,36 @@
+name: Notify Discord of new articles
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes (GitHub may delay this a few minutes)
+  workflow_dispatch:          # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: write             # needed to save state.json back to the repo
+
+concurrency:
+  group: iawm-notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new articles
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_ROLE_ID: ${{ vars.DISCORD_ROLE_ID }}
+        run: python3 iawm_discord_notifier.py
+
+      - name: Save state (runs even if a send failed, so nothing is announced twice)
+        if: always()
+        run: |
+          git config user.name "iawm-notifier"
+          git config user.email "iawm-notifier@users.noreply.github.com"
+          git add state.json || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Update seen posts [skip ci]"
+            git push
+          fi
