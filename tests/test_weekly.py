@@ -184,6 +184,11 @@ reset(); Mock.posts = [post(101, "Pic", "2026-11-10T20:00:00", author="Zhengji L
 em = Mock.hooks[0]["embeds"][0] if Mock.hooks else {}
 check("10 author and image carried over", em.get("author", {}).get("name") == "by Zhengji Li" and em.get("image", {}).get("url") == "https://x/img.png", str(em))
 
+# ---- 10b. the "Published" date is the Pacific date, not UTC (02:00Z on Nov 10 is the evening of Nov 9) ------
+reset(); Mock.posts = [post(102, "Evening post", "2026-11-10T02:00:25")]; Mock.views = {102: 3}; run()
+pub = next((f["value"] for f in Mock.hooks[0]["embeds"][0]["fields"] if f["name"] == "Published"), None) if Mock.hooks else None
+check("10b published date uses Pacific time (Nov 9, not UTC Nov 10)", pub == "Nov 9", str(pub))
+
 # ---- 11. jetpack provider request shape ---------------------------------------------------------------
 reset(); Mock.posts = [post(111, "J", "2026-11-10T20:00:00")]; Mock.views = {111: 77}
 r = run(VIEW_SOURCE="jetpack", WPCOM_TOKEN="tok123", WPCOM_SITE="example.com", WPCOM_API_BASE=f"{BASE}/rest/v1.1")

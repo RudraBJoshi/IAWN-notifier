@@ -165,10 +165,11 @@ def title_of(p):
     return base.clean_text((p.get("title") or {}).get("rendered"), 250) or "Untitled"
 
 
-def build_payload(ranked, label, ping):
+def build_payload(ranked, label, ping, tz):
     """ranked: list of (post, views), best first."""
     prefix, allowed = base.mention() if ping else ("", {"parse": []})
     win, win_views = ranked[0]
+    local_pub = base.post_date(win).astimezone(tz)  # the date readers saw (and that the post URL uses), not UTC
     embed = {
         "title": f"🏆 {title_of(win)}"[:256],
         "url": win["link"],
@@ -176,7 +177,7 @@ def build_payload(ranked, label, ping):
         "color": GOLD,
         "fields": [
             {"name": "Views", "value": f"{win_views:,}", "inline": True},
-            {"name": "Published", "value": f"{base.post_date(win):%b} {base.post_date(win).day}", "inline": True},
+            {"name": "Published", "value": f"{local_pub:%b} {local_pub.day}", "inline": True},
         ],
         "footer": {"text": f"Most-read this week · {label}"},
         "timestamp": base.post_date(win).isoformat(),
@@ -286,7 +287,7 @@ def main(argv):
         return 0
 
     ranked = scored[:top_n]
-    payload = build_payload(ranked, label, ping)
+    payload = build_payload(ranked, label, ping, tz)
     if opts["dry"]:
         base.log("DRY RUN payload:\n" + json.dumps(payload, indent=1, ensure_ascii=False))
         return 0
