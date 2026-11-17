@@ -43,3 +43,18 @@ Files are already in place: `iawm_discord_notifier.py` at the top level and `.gi
 - Want it instant instead of every 15 minutes? A tiny WordPress snippet can call the same webhook the moment a post is
   published. Say the word and I'll write it.
 - Tests: `python3 tests/test_notifier.py` (mock WordPress + mock Discord, 37 checks).
+
+## Weekly most-read highlight
+
+`weekly_highlight.py` posts the article with the most views **among articles published that week**
+(Mon 00:00 to Sun 24:00 Pacific), plus the runner-ups, every Sunday evening.
+
+- Workflow: `.github/workflows/weekly-highlight.yml` (Mon 02:30 UTC = Sun 6:30/7:30 pm Pacific). Manual runs
+  default to a **dry run**; untick "dry_run" to send. `week_of` and `force` are available too.
+- Views come from `VIEW_SOURCE`: `jetpack` (WordPress.com stats API; needs the secret `WPCOM_TOKEN` and the
+  variable `WPCOM_SITE`) or `url` (your own counter; variable `VIEWS_URL_TEMPLATE` containing `{id}`, optional
+  secret `VIEWS_TOKEN`, JSON `{"views": n}`). The Jetpack call has only been tested against a mock; see BUILD_LOG.md.
+- Reuses `DISCORD_WEBHOOK_URL` and `DISCORD_ROLE_ID`. `WEEKLY_PING=0` posts without the ping.
+- `weekly_state.json` remembers which weeks were already highlighted, so reruns never double-post.
+- Local checks: `python3 weekly_highlight.py --dry-run --week-of 2026-11-09` (set the env vars first), and
+  `python3 tests/test_weekly.py` (50 checks against mock WordPress, stats and Discord).

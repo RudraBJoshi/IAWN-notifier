@@ -1,0 +1,66 @@
+name: Weekly most-read highlight
+
+on:
+  schedule:
+    # Mon 02:30 UTC = Sunday 6:30 pm PST / 7:30 pm PDT. GitHub may delay scheduled runs a little;
+    # a run that slips past Pacific midnight still highlights the week that just ended.
+    - cron: "30 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print the message instead of sending it"
+        type: boolean
+        default: true
+      week_of:
+        description: "Any date (YYYY-MM-DD) inside the week to highlight; blank = automatic"
+        required: false
+      force:
+        description: "Post even if that week was already highlighted"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write             # needed to save weekly_state.json back to the repo
+
+concurrency:
+  group: iawm-weekly
+  cancel-in-progress: false
+
+jobs:
+  highlight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Post the weekly highlight
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_ROLE_ID: ${{ vars.DISCORD_ROLE_ID }}
+          WEEKLY_PING: ${{ vars.WEEKLY_PING }}
+          VIEW_SOURCE: ${{ vars.VIEW_SOURCE }}
+          WPCOM_SITE: ${{ vars.WPCOM_SITE }}
+          WPCOM_TOKEN: ${{ secrets.WPCOM_TOKEN }}
+          VIEWS_URL_TEMPLATE: ${{ vars.VIEWS_URL_TEMPLATE }}
+          VIEWS_TOKEN: ${{ secrets.VIEWS_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          WEEK_OF: ${{ inputs.week_of }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=()
+          # scheduled runs have no inputs, so they send for real; manual runs default to a dry run
+          if [ "${DRY_RUN}" = "true" ]; then args+=(--dry-run); fi
+          if [ -n "${WEEK_OF}" ]; then args+=(--week-of "${WEEK_OF}"); fi
+          if [ "${FORCE}" = "true" ]; then args+=(--force); fi
+          python3 weekly_highlight.py "${args[@]}"
+
+      - name: Save state (only after a real send)
+        if: success()
+        run: |
+          git config user.name "iawm-notifier"
+          git config user.email "iawm-notifier@users.noreply.github.com"
+          git add weekly_state.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Record weekly highlight [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push
+          fi

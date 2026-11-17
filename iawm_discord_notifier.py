@@ -40,10 +40,13 @@ def log(msg):
     print(f"[{datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S}Z] {msg}", flush=True)
 
 
-def request(url, payload=None, retries=3):
-    """GET (payload None) or POST JSON. Returns (status, body_bytes). Retries on 429/5xx."""
+def request(url, payload=None, retries=3, headers=None):
+    """GET (payload None) or POST JSON. Returns (status, body_bytes). Retries on 429/5xx.
+    `headers` adds/overrides request headers (e.g. Authorization)."""
     data = json.dumps(payload).encode() if payload is not None else None
-    headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+    hdrs = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+    hdrs.update(headers or {})
+    headers = hdrs
     if data is not None:
         headers["Content-Type"] = "application/json"
     last = None
